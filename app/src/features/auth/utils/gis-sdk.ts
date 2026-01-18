@@ -37,7 +37,6 @@ const getCustomWindow = (): CustomWindow => window as unknown as CustomWindow;
 const GIS_SCRIPT_URL = 'https://accounts.google.com/gsi/client';
 const SCOPES = [
   'https://www.googleapis.com/auth/drive.file',
-  'https://www.googleapis.com/auth/presentations',
   'email',
   'profile',
 ].join(' ');

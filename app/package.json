@@ -9,16 +9,21 @@
     "lint": "eslint .",
     "preview": "vite preview",
     "test": "vitest",
+    "test:integration": "./scripts/run-integration.sh",
+    "test:token": "./scripts/get-refresh-token.sh",
+    "template:create": "./scripts/create-template.sh",
     "test:ct": "playwright test -c playwright-ct.config.ts",
-    "format": "prettier --write ."
+    "format": "prettier --write .",
+    "typecheck": "tsc -b --noEmit"
   },
   "dependencies": {
-    "@google/generative-ai": "^0.24.1",
+    "@google/genai": "^1.37.0",
     "@radix-ui/react-dialog": "^1.1.15",
     "@radix-ui/react-slot": "^1.2.4",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "date-fns": "^4.1.0",
+    "google-auth-library": "^10.5.0",
     "lucide-react": "^0.556.0",
     "neverthrow": "^8.2.0",
     "react": "^19.2.0",
