@@ -165,14 +165,3 @@ test.describe('Chat & Generator Flow', () => {
     await expect(iframe).toHaveAttribute('src', /new-presentation-id/);
   });
 });
-    // 1. Chat bubble appears
-    await expect(page.getByText('Generated Slide')).toBeVisible({
-      timeout: 10000,
-    }); // Title update in manifest?
-
-    // 2. Preview iframe appears
-    const iframe = page.locator('iframe[title="Google Slides Preview"]');
-    await expect(iframe).toBeVisible();
-    await expect(iframe).toHaveAttribute('src', /new-presentation-id/);
-  });
-});

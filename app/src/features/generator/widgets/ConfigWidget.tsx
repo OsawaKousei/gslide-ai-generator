@@ -1,8 +1,17 @@
 import { match } from 'ts-pattern';
-import { LogIn, LogOut, User as UserIcon, Settings } from 'lucide-react';
+import {
+  LogIn,
+  LogOut,
+  User as UserIcon,
+  Settings,
+  FileSearch,
+} from 'lucide-react';
 import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { useAuthStore } from '@/features/auth/stores/useAuthStore';
+import { useGeneratorStore } from '../stores/useGeneratorStore';
+import { openDrivePicker } from '../utils/picker-api';
+import { env } from '@/env';
 import {
   Dialog,
   DialogContent,
@@ -14,9 +23,13 @@ import {
 const API_KEY_STORAGE_KEY = 'gemini-api-key';
 
 export const ConfigWidget = () => {
-  const status = useAuthStore((s) => s.status);
+  const authStatus = useAuthStore((s) => s.status);
   const user = useAuthStore((s) => s.user);
+  const accessToken = useAuthStore((s) => s.accessToken);
   const { login, logout } = useAuthStore((s) => s.actions);
+
+  const templateId = useGeneratorStore((s) => s.templateId);
+  const { setTemplateId } = useGeneratorStore((s) => s.actions);
 
   const [apiKey, setApiKey] = useState('');
   const [isOpen, setIsOpen] = useState(false);
@@ -30,11 +43,56 @@ export const ConfigWidget = () => {
     setIsOpen(false);
   };
 
+  const handleSelectTemplate = async () => {
+    if (!accessToken) {
+      alert(
+        'Authentication missing. Please login again (Access Token not found).',
+      );
+      return;
+    }
+
+    if (!env.VITE_GOOGLE_API_KEY) {
+      alert('API Key missing. VITE_GOOGLE_API_KEY is not set in .env');
+      return;
+    }
+
+    const result = await openDrivePicker({
+      accessToken,
+      apiKey: env.VITE_GOOGLE_API_KEY,
+    });
+
+    if (result.isOk() && result.value) {
+      setTemplateId(result.value.id);
+    } else if (result.isErr()) {
+      console.error(result.error);
+      alert('Failed to pick file: ' + result.error.message);
+    }
+  };
+
   return (
     <div className="flex items-center justify-between w-full">
       <div className="font-bold text-lg">GSlide AI Generator</div>
 
       <div className="flex items-center gap-4">
+        {/* Template Selector (Only show when authenticated) */}
+        {authStatus === 'authenticated' && (
+          <div className="flex items-center gap-2">
+            <span className="text-xs text-gray-500 max-w-[150px] truncate">
+              {templateId ? `Template: ${templateId}` : 'No Template Selected'}
+            </span>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleSelectTemplate}
+              title="Select Template from Drive"
+              className="gap-2"
+            >
+              <FileSearch size={16} />
+              Select Template
+            </Button>
+          </div>
+        )}
+
         <Dialog open={isOpen} onOpenChange={setIsOpen}>
           <DialogTrigger asChild>
             <Button variant="ghost" size="icon" title="Settings">
@@ -67,7 +125,7 @@ export const ConfigWidget = () => {
           </DialogContent>
         </Dialog>
 
-        {match(status)
+        {match(authStatus)
           .with('authenticated', () => (
             <div className="flex items-center gap-3">
               <div className="flex items-center gap-2 text-sm text-gray-700">

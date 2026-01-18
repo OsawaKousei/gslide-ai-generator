@@ -40,7 +40,7 @@ const initialState: GeneratorState = {
 // スライド更新用のリクエストを生成
 const generateRequests = (
   manifestSlides: readonly SlideNode[],
-  realSlides: readonly { objectId: string }[],
+  realSlides: ReadonlyArray<{ objectId: string }>,
 ): SlideApiRequest[] => {
   const requests: SlideApiRequest[] = [];
   const simulatedRealSlides = [...realSlides];
@@ -50,9 +50,10 @@ const generateRequests = (
     let targetObjectId: string;
 
     // 1. Determine Target ID (Existing or New)
-    if (index < simulatedRealSlides.length) {
+    if (index < simulatedRealSlides.length && simulatedRealSlides[index]) {
       // Existing slide
-      targetObjectId = simulatedRealSlides[index].objectId;
+      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+      targetObjectId = simulatedRealSlides[index]!.objectId;
     } else {
       // New slide needed
       if (!templateSourceId) return; // Cannot create without template
@@ -148,7 +149,7 @@ export const useGeneratorStore = create<Store>()(
           }
 
           // 2. Fetch Current Slides Structure (to get objectIds)
-          // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+
           const getResult = await getPresentation({
             presentationId: currentPresentationId!,
             accessToken,
@@ -189,8 +190,8 @@ export const useGeneratorStore = create<Store>()(
             // If we had an existing slide, use its ID.
             // If we created a new one, we know the ID we generated.
             const objectId =
-              i < currentSlides.length
-                ? currentSlides[i].objectId
+              i < currentSlides.length && currentSlides[i]
+                ? currentSlides[i]!.objectId
                 : `slide_${s.id.replace(/-/g, '_')}`;
 
             return {

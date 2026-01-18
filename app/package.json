@@ -13,7 +13,8 @@
     "test:token": "./scripts/get-refresh-token.sh",
     "template:create": "./scripts/create-template.sh",
     "test:ct": "playwright test -c playwright-ct.config.ts",
-    "format": "prettier --write ."
+    "format": "prettier --write .",
+    "typecheck": "tsc -b --noEmit"
   },
   "dependencies": {
     "@google/genai": "^1.37.0",
