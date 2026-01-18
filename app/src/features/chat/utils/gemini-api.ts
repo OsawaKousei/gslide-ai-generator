@@ -1,6 +1,7 @@
 import { GoogleGenAI, type Content, type Tool } from '@google/genai';
 import { ResultAsync } from 'neverthrow';
 import type { PresentationManifest } from '../../generator/types';
+import type { FunctionCall } from '../types';
 
 // TODO: Move to env.ts or similar if needed, but for now assuming implementation specific logic here or passed in.
 // Actually, API Key comes from ConfigWidget (local storage), so we will pass it to the service.
@@ -27,35 +28,43 @@ const TOOLS: Tool[] = [
         description:
           'Update the presentation manifest with new slides or title.',
         parameters: {
-          type: 'OBJECT',
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          type: 'OBJECT' as any,
           properties: {
             title: {
-              type: 'STRING',
+              // eslint-disable-next-line @typescript-eslint/no-explicit-any
+              type: 'STRING' as any,
               description: 'The title of the presentation.',
             },
             slides: {
-              type: 'ARRAY',
+              // eslint-disable-next-line @typescript-eslint/no-explicit-any
+              type: 'ARRAY' as any,
               description: 'List of slides to add or update.',
               items: {
-                type: 'OBJECT',
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                type: 'OBJECT' as any,
                 properties: {
                   id: {
-                    type: 'STRING',
+                    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                    type: 'STRING' as any,
                     description: 'Unique ID for the slide (UUID).',
                   },
                   templateId: {
-                    type: 'STRING',
+                    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                    type: 'STRING' as any,
                     description:
                       'Layout template ID (e.g., layout_title, layout_bullet)',
                   },
                   content: {
-                    type: 'OBJECT',
+                    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                    type: 'OBJECT' as any,
                     description: 'Content of the slide (title, body).',
                     properties: {
-                      title: { type: 'STRING' },
+                      title: { type: 'STRING' as any }, // eslint-disable-line @typescript-eslint/no-explicit-any
                       body: {
-                        type: 'ARRAY',
-                        items: { type: 'STRING' },
+                        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                        type: 'ARRAY' as any,
+                        items: { type: 'STRING' as any }, // eslint-disable-line @typescript-eslint/no-explicit-any
                       },
                     },
                     required: ['title'],
@@ -84,7 +93,7 @@ export const sendMessage = ({
   message,
   currentManifest,
 }: SendMessageParams): ResultAsync<
-  { text: string; functionCall?: unknown },
+  { text: string; functionCall?: FunctionCall },
   Error
 > => {
   // Inject current manifest context.
@@ -118,7 +127,7 @@ export const sendMessage = ({
 
       // Handle function calls
       const functionCalls = result.functionCalls; // Getter
-      let functionCallData = undefined;
+      let functionCallData: FunctionCall | undefined = undefined;
 
       if (functionCalls && functionCalls.length > 0) {
         const call = functionCalls[0];

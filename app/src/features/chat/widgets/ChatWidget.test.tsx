@@ -82,7 +82,10 @@ describe('ChatWidget', () => {
     fireEvent.change(input, { target: { value: 'Test' } });
 
     const btns = screen.getAllByRole('button');
-    fireEvent.click(btns[btns.length - 1]); // Send button is last
+    const sendBtn = btns[btns.length - 1];
+    if (sendBtn) {
+      fireEvent.click(sendBtn); // Send button is last
+    }
 
     expect(window.alert).toHaveBeenCalledWith(
       expect.stringContaining('Please set Gemini API Key'),
