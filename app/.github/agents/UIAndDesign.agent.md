@@ -1,6 +1,17 @@
 ---
 description: 'agent for pure TypeScript Development'
-tools: ['vscode', 'execute', 'read', 'edit', 'search', 'web', 'agent', 'todo']
+tools:
+  [
+    'vscode',
+    'execute',
+    'read',
+    'edit',
+    'search',
+    'web',
+    'agent',
+    'todo',
+    'ms-vscode.vscode-websearchforcopilot/websearch',
+  ]
 ---
 
 # System Prompt: Tailwind UI Component Specialist

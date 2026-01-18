@@ -5,5 +5,26 @@
     "source.fixAll.eslint": "explicit"
   },
   "editor.defaultFormatter": "esbenp.prettier-vscode",
-  "files.eol": "\n"
+  "files.eol": "\n",
+  "chat.agent.maxRequests": 100,
+  "chat.tools.terminal.autoApprove": {
+    "ls": true,
+    "dir": true,
+    "pwd": true,
+    "cd": true,
+    "cat": true,
+    "echo": true,
+    "grep": true,
+    "find": true,
+    "type": true,
+    "npm install": true,
+    "npm i": true,
+    "npm list": true,
+    "npm view": true,
+    "npm outdated": true,
+    "npm audit": true,
+    "npm test": true,
+    "node -v": true,
+    "npm -v": true
+  }
 }
