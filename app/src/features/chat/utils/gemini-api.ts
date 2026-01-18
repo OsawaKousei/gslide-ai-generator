@@ -1,5 +1,5 @@
 import { GoogleGenAI, type Content, type Part, type Tool } from '@google/genai';
-import { ok, err, fromThrowable, type Result } from 'neverthrow';
+import { ok, err, ResultAsync, type Result } from 'neverthrow';
 import type { PresentationManifest } from '../../generator/types';
 
 // TODO: Move to env.ts or similar if needed, but for now assuming implementation specific logic here or passed in.
@@ -83,6 +83,8 @@ export class GeminiService {
     message: string,
     currentManifest: PresentationManifest,
   ): Promise<Result<{ text: string; functionCall?: any }, Error>> {
+    const model = 'gemini-2.0-flash-exp'; // Updated model
+
     // Inject current manifest context.
     const contextRequest = `
       [Current Manifest Context]
@@ -93,10 +95,10 @@ export class GeminiService {
       User Request: ${message}
     `;
 
-    return fromThrowable(
-      async () => {
+    return ResultAsync.fromPromise(
+      (async () => {
         const chat = this.client.chats.create({
-          model: 'gemini-1.5-flash',
+          model: 'gemini-2.0-flash-exp', // Updated model
           config: {
             systemInstruction: SYSTEM_INSTRUCTION,
             tools: TOOLS,
@@ -109,7 +111,7 @@ export class GeminiService {
           message: contextRequest,
         });
 
-        const text = result.text; // Getter
+        const textOutput = result.text || '';
 
         // Handle function calls
         const functionCalls = result.functionCalls; // Getter
@@ -126,11 +128,11 @@ export class GeminiService {
         }
 
         return {
-          text: text ?? '', // text might be undefined if only function call? Check types
+          text: textOutput,
           functionCall: functionCallData,
         };
-      },
+      })(),
       (e) => (e instanceof Error ? e : new Error(String(e))),
-    )();
+    );
   }
 }

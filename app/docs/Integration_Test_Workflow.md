@@ -81,6 +81,15 @@ npm run template:create
 TEST_TEMPLATE_ID=your_presentation_id
 ```
 
+### Step 4: Gemini API Key (Optional for Chat Test)
+
+Chat機能のテストを行う場合は、Gemini API Key を設定します。
+[Google AI Studio](https://aistudio.google.com/) からキーを取得してください。
+
+```dotenv
+TEST_GEMINI_API_KEY=AIzr...
+```
+
 ## 4. 統合テストの実行
 
 すべての設定が完了したら、統合テストを実行します。
