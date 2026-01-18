@@ -1,10 +1,10 @@
 import { Routes, Route, Navigate } from 'react-router-dom';
-import { GomokuPage } from '@/features/gomoku';
+import { MainPage } from '@/features/generator/pages/MainPage';
 
 export const AppRoutes = () => {
   return (
     <Routes>
-      <Route path="/" element={<GomokuPage />} />
+      <Route path="/" element={<MainPage />} />
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
   );

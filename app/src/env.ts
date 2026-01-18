@@ -1,14 +1,9 @@
 import { z } from 'zod';
 
-// Viteの標準環境変数 + アプリ固有の環境変数
-const envSchema = z.object({
-  BASE_URL: z.string().default('/'),
-  MODE: z.string().default('development'),
-  DEV: z.boolean().default(false),
-  PROD: z.boolean().default(false),
-  SSR: z.boolean().default(false),
+export const envSchema = z.object({
+  VITE_API_BASE_URL: z.string().url().default('https://www.googleapis.com'),
+  VITE_GOOGLE_CLIENT_ID: z.string().min(1).optional(), // 開発初期はOptionalにしておく
 });
 
-// import.meta.env を検証してエクスポート
-// バリデーションエラー時は例外がスローされ、アプリ起動が停止する（Strict Runtime）
+// 検証失敗時はアプリ起動時に即座にエラー (Fail Fast)
 export const env = envSchema.parse(import.meta.env);
