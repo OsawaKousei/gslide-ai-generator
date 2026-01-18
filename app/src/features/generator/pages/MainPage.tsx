@@ -1,6 +1,6 @@
 import { PreviewWidget } from '../widgets/PreviewWidget';
 import { ConfigWidget } from '../widgets/ConfigWidget';
-import { ChatWidget } from '../widgets/ChatWidget';
+import { ChatWidget } from '@/features/chat';
 
 export const MainPage = () => {
   return (

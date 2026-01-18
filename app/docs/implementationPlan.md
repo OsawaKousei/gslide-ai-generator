@@ -43,15 +43,15 @@ Google Drive & Slides API との通信層を確立します。
   - 各 API Utility のモックを使用した単体テスト。
   - `useGeneratorStore` の状態遷移テスト。
 
-## Phase 4: Chat & AI Logic (Feature Implementation) - **Current Task**
+## Phase 4: Chat & AI Logic (Feature Implementation) - **Completed**
 
 Gemini API との連携およびチャット UI を実装します。
 
-- [ ] **Chat Store:** `useChatStore` の実装。履歴管理。
-- [ ] **AI Service:** `@google/generative-ai` を用いた Gemini 呼び出しと Function Calling のハンドリング。
-- [ ] **Widgets:** `ChatWidget` の実装 (Message List, Input Area)。
-- [ ] **System Prompt:** スライド生成・修正に特化したプロンプト設計。
-- [ ] **Test:**
+- [x] **Chat Store:** `useChatStore` の実装。履歴管理。
+- [x] **AI Service:** `@google/generative-ai` を用いた Gemini 呼び出しと Function Calling のハンドリング。
+- [x] **Widgets:** `ChatWidget` の実装 (Message List, Input Area)。
+- [x] **System Prompt:** スライド生成・修正に特化したプロンプト設計。
+- [x] **Test:**
   - AI レスポンス (Function Call) のパース処理の単体テスト。
   - チャット UI のインタラクションテスト。
 
