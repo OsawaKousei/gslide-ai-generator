@@ -12,6 +12,7 @@ vi.mock('../utils/drive-api', () => ({
 }));
 vi.mock('../utils/slide-api', () => ({
   batchUpdatePresentation: vi.fn(),
+  getPresentation: vi.fn(),
 }));
 
 describe('useGeneratorStore', () => {
@@ -54,6 +55,11 @@ describe('useGeneratorStore', () => {
         ok({ id: 'new-pres-id', name: 'Test' }),
       );
 
+      // Mock getPresentation success
+      (slideApi.getPresentation as Mock).mockReturnValue(
+        ok({ presentationId: 'new-pres-id', slides: [] }),
+      );
+
       // Mock batchUpdate success (though no slides to update yet)
       (slideApi.batchUpdatePresentation as Mock).mockReturnValue(ok(undefined));
 
@@ -62,6 +68,10 @@ describe('useGeneratorStore', () => {
       expect(driveApi.copyPresentation).toHaveBeenCalledWith({
         templateId: 'temp-1',
         title: 'Test',
+        accessToken: 'test-token',
+      });
+      expect(slideApi.getPresentation).toHaveBeenCalledWith({
+        presentationId: 'new-pres-id',
         accessToken: 'test-token',
       });
       expect(useGeneratorStore.getState().manifest.presentationId).toBe(

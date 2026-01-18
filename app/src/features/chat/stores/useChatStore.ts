@@ -132,6 +132,9 @@ export const useChatStore = create<Store>()(
               title: payload.title || manifest.title,
               slides: newSlides,
             });
+
+            // Trigger Sync
+            await generatorActions.syncToSlides();
           }
         } catch (error) {
           set({

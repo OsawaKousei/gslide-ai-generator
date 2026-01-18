@@ -89,3 +89,45 @@ export const batchUpdatePresentation = ({
     (e) => (e instanceof Error ? e : new Error('Unknown Slides API Error')),
   );
 };
+
+const PresentationSchema = z.object({
+  presentationId: z.string(),
+  slides: z.array(
+    z.object({
+      objectId: z.string(),
+    }),
+  ),
+});
+
+export type PresentationData = z.infer<typeof PresentationSchema>;
+
+export const getPresentation = ({
+  presentationId,
+  accessToken,
+}: {
+  presentationId: string;
+  accessToken: string;
+}): ResultAsync<PresentationData, Error> => {
+  return ResultAsync.fromPromise(
+    fetch(`https://slides.googleapis.com/v1/presentations/${presentationId}`, {
+      method: 'GET',
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+      },
+    }).then(async (res) => {
+      if (!res.ok) {
+        throw new Error(
+          `Slides API Error (Get): ${res.status} ${res.statusText}`,
+        );
+      }
+      return res.json();
+    }),
+    (e) => (e instanceof Error ? e : new Error('Unknown Slides API Error')),
+  ).andThen((json) => {
+    const result = PresentationSchema.safeParse(json);
+    if (!result.success) {
+      return err(new Error(`Invalid API Response: ${result.error.message}`));
+    }
+    return ok(result.data);
+  });
+};

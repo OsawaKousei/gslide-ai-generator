@@ -5,6 +5,7 @@ import { useAuthStore } from '../../auth/stores/useAuthStore';
 import { copyPresentation } from '../utils/drive-api';
 import {
   batchUpdatePresentation,
+  getPresentation,
   type SlideApiRequest,
 } from '../utils/slide-api';
 
@@ -36,11 +37,74 @@ const initialState: GeneratorState = {
   error: null,
 };
 
-// Placeholder: 実際にはスライドの内容に基づいてリクエストを生成する複雑なロジックが必要
-const generateRequests = (_slides: readonly SlideNode[]): SlideApiRequest[] => {
-  // TODO: Implement actual request builder
-  // ここではダミーのリクエストリストを返す
-  return [];
+// スライド更新用のリクエストを生成
+const generateRequests = (
+  manifestSlides: readonly SlideNode[],
+  realSlides: readonly { objectId: string }[],
+): SlideApiRequest[] => {
+  const requests: SlideApiRequest[] = [];
+  const simulatedRealSlides = [...realSlides];
+  const templateSourceId = realSlides[0]?.objectId; // Use first slide as template for new ones
+
+  manifestSlides.forEach((slide, index) => {
+    let targetObjectId: string;
+
+    // 1. Determine Target ID (Existing or New)
+    if (index < simulatedRealSlides.length) {
+      // Existing slide
+      targetObjectId = simulatedRealSlides[index].objectId;
+    } else {
+      // New slide needed
+      if (!templateSourceId) return; // Cannot create without template
+
+      // New ID must be unique and valid. UUID is fine, but lets remove dashes to be safe for Google API IDs if strict
+      targetObjectId = `slide_${slide.id.replace(/-/g, '_')}`;
+
+      requests.push({
+        duplicateObject: {
+          objectId: targetObjectId,
+          sourceObjectId: templateSourceId,
+        },
+      });
+
+      // Move the new slide to the end (optional, duplicateObject places at end by default if insertionIndex not specified)
+      // Add to simulated tracking
+      simulatedRealSlides.push({ objectId: targetObjectId });
+    }
+
+    // 2. Content Updates (Only if dirty or pending (new))
+    if (slide.status === 'dirty' || slide.status === 'pending') {
+      const { title, body } = slide.content;
+
+      // Update Title
+      if (title) {
+        requests.push({
+          replaceAllText: {
+            containsText: { text: '{{title}}', matchCase: true },
+            replaceText: title,
+            pageObjectIds: [targetObjectId],
+          },
+        });
+      }
+
+      // Update Body (bullets etc)
+      if (body && Array.isArray(body)) {
+        const bodyText = body.join('\n');
+        requests.push({
+          replaceAllText: {
+            containsText: { text: '{{body}}', matchCase: true },
+            replaceText: bodyText,
+            pageObjectIds: [targetObjectId],
+          },
+        });
+      }
+    }
+  });
+
+  // Remove excess slides if manifest has fewer than real
+  // (Optional: For now we don't delete to be safe, or we can implement deleteObject)
+
+  return requests;
 };
 
 export const useGeneratorStore = create<Store>()(
@@ -81,21 +145,23 @@ export const useGeneratorStore = create<Store>()(
             }
 
             currentPresentationId = copyResult.value.id;
-
-            // Generate new manifest with presentationId
-            const newManifest: PresentationManifest = {
-              ...manifest,
-              presentationId: currentPresentationId,
-            };
-            set({ manifest: newManifest });
           }
 
-          // 2. Generate Batch Update Requests for dirty slides
-          // (Simplified: Update all for now or filter dirty)
-          const dirtySlides = manifest.slides.filter(
-            (s) => s.status === 'dirty' || s.status === 'pending',
-          );
-          const requests = generateRequests(dirtySlides);
+          // 2. Fetch Current Slides Structure (to get objectIds)
+          // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+          const getResult = await getPresentation({
+            presentationId: currentPresentationId!,
+            accessToken,
+          });
+
+          if (getResult.isErr()) {
+            throw getResult.error;
+          }
+
+          const currentSlides = getResult.value.slides;
+
+          // 3. Generate Requests
+          const requests = generateRequests(manifest.slides, currentSlides);
 
           if (requests.length > 0) {
             const updateResult = await batchUpdatePresentation({
@@ -111,13 +177,28 @@ export const useGeneratorStore = create<Store>()(
             }
           }
 
-          // 3. Update Sync Status
-          // Mark all processed slides as synced
-          const syncedSlides = manifest.slides.map((s) =>
-            s.status === 'dirty' || s.status === 'pending'
-              ? ({ ...s, status: 'synced' } as const)
-              : s,
-          );
+          // 4. Update Sync Status & IDs
+          // Hydrate manifest with actual objectIds (rough mapping for now)
+          // Note: If we added slides, we used predicted IDs.
+          // Correct way is to fetch again, but for now assuming strict order.
+
+          // Re-fetch to be sure about Object IDs if we want perfect sync state?
+          // For PoC, simply marking as synced is enough.
+
+          const syncedSlides = manifest.slides.map((s, i) => {
+            // If we had an existing slide, use its ID.
+            // If we created a new one, we know the ID we generated.
+            const objectId =
+              i < currentSlides.length
+                ? currentSlides[i].objectId
+                : `slide_${s.id.replace(/-/g, '_')}`;
+
+            return {
+              ...s,
+              objectId,
+              status: 'synced',
+            } as const;
+          });
 
           set({
             manifest: {

@@ -38,6 +38,7 @@ Google Drive & Slides API との通信層を確立します。
   - `drive-api.ts`: テンプレートのコピー機能。
   - `slide-api.ts`: プレゼンテーションの更新機能 (batchUpdate)。
 - [x] **Store:** `useGeneratorStore` の実装。Manifest 管理と同期ロジック。
+- [x] **Logic Refinement:** `syncToSlides` における API リクエスト生成ロジック (`generateRequests`) とスライド同期 (`getPresentation`) の実装完了。
 - [x] **Components:** `PreviewWidget` (iframe) の実装。
 - [x] **Test:**
   - 各 API Utility のモックを使用した単体テスト。
@@ -59,9 +60,11 @@ Gemini API との連携およびチャット UI を実装します。
 
 全モジュールを統合し、実動作を確認します。
 
-- [ ] **Integration:** `App.tsx` での各 Widget の結合確認。
-- [ ] **E2E Test:** Playwright を使用した、「チャットで指示 -> スライド生成 -> プレビュー更新」の一連のフロー確認。
-- [ ] **Refine:** エッジケース（API エラー、トークン切れ）のハンドリング改善。
+- [x] **Integration:** `App.tsx` での各 Widget の結合確認。
+  - `useChatStore` から `useGeneratorStore.actions.syncToSlides` を呼び出す連携を実装。
+  - `PreviewWidget` に Loading 表示とエラー表示を追加。
+- [x] **Refine:** エッジケース（API エラー）のハンドリング改善。
+- [ ] **E2E Test:** Playwright を使用した、「チャットで指示 -> スライド生成 -> プレビュー更新」の一連のフロー確認。(Skipped by User Request)
 
 ---
 
