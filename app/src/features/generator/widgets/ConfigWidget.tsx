@@ -4,14 +4,14 @@ import {
   LogOut,
   User as UserIcon,
   Settings,
-  FileSearch,
+  Upload,
+  Loader2,
 } from 'lucide-react';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Button } from '@/components/ui/button';
 import { useAuthStore } from '@/features/auth/stores/useAuthStore';
 import { useGeneratorStore } from '../stores/useGeneratorStore';
-import { openDrivePicker } from '../utils/picker-api';
-import { env } from '@/env';
+import { uploadPresentation } from '../utils/drive-api';
 import {
   Dialog,
   DialogContent,
@@ -33,6 +33,8 @@ export const ConfigWidget = () => {
 
   const [apiKey, setApiKey] = useState('');
   const [isOpen, setIsOpen] = useState(false);
+  const [isUploading, setIsUploading] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     setApiKey(localStorage.getItem(API_KEY_STORAGE_KEY) || '');
@@ -43,29 +45,42 @@ export const ConfigWidget = () => {
     setIsOpen(false);
   };
 
-  const handleSelectTemplate = async () => {
-    if (!accessToken) {
-      alert(
-        'Authentication missing. Please login again (Access Token not found).',
-      );
+  const handleUploadClick = () => {
+    fileInputRef.current?.click();
+  };
+
+  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file || !accessToken) return;
+
+    if (
+      !file.name.endsWith('.pptx') &&
+      file.type !==
+        'application/vnd.openxmlformats-officedocument.presentationml.presentation'
+    ) {
+      alert('Please upload a PowerPoint (.pptx) file.');
       return;
     }
 
-    if (!env.VITE_GOOGLE_API_KEY) {
-      alert('API Key missing. VITE_GOOGLE_API_KEY is not set in .env');
-      return;
-    }
+    setIsUploading(true);
 
-    const result = await openDrivePicker({
-      accessToken,
-      apiKey: env.VITE_GOOGLE_API_KEY,
-    });
+    try {
+      const result = await uploadPresentation({
+        file,
+        accessToken,
+      });
 
-    if (result.isOk() && result.value) {
-      setTemplateId(result.value.id);
-    } else if (result.isErr()) {
-      console.error(result.error);
-      alert('Failed to pick file: ' + result.error.message);
+      if (result.isOk()) {
+        setTemplateId(result.value.id);
+        alert(`Template uploaded: ${result.value.name}`);
+      } else {
+        console.error(result.error);
+        alert('Upload failed: ' + result.error.message);
+      }
+    } finally {
+      setIsUploading(false);
+      // Reset input
+      if (fileInputRef.current) fileInputRef.current.value = '';
     }
   };
 
@@ -74,21 +89,35 @@ export const ConfigWidget = () => {
       <div className="font-bold text-lg">GSlide AI Generator</div>
 
       <div className="flex items-center gap-4">
-        {/* Template Selector (Only show when authenticated) */}
+        {/* Hidden File Input */}
+        <input
+          type="file"
+          ref={fileInputRef}
+          className="hidden"
+          accept=".pptx,application/vnd.openxmlformats-officedocument.presentationml.presentation"
+          onChange={handleFileChange}
+        />
+
+        {/* Template Uploader (Only show when authenticated) */}
         {authStatus === 'authenticated' && (
           <div className="flex items-center gap-2">
             <span className="text-xs text-gray-500 max-w-[150px] truncate">
-              {templateId ? `Template: ${templateId}` : 'No Template Selected'}
+              {templateId ? `Template: ${templateId}` : 'No Template'}
             </span>
             <Button
               variant="outline"
               size="sm"
-              onClick={handleSelectTemplate}
-              title="Select Template from Drive"
+              onClick={handleUploadClick}
+              title="Upload .pptx Template"
               className="gap-2"
+              disabled={isUploading}
             >
-              <FileSearch size={16} />
-              Select Template
+              {isUploading ? (
+                <Loader2 size={16} className="animate-spin" />
+              ) : (
+                <Upload size={16} />
+              )}
+              {isUploading ? 'Uploading...' : 'Upload Template'}
             </Button>
           </div>
         )}
