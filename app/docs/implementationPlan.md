@@ -30,20 +30,20 @@ Google Identity Services (GIS) を用いた認証機能を実装します。
   - `useAuthStore` の単体テスト (Vitest)。
   - ログイン状態による UI 切り替えのコンポーネントテスト。
 
-## Phase 3: Google API Integration (Feature Implementation) - **Current Task**
+## Phase 3: Google API Integration (Feature Implementation) - **Completed**
 
 Google Drive & Slides API との通信層を確立します。
 
-- [ ] **API Utilities:**
+- [x] **API Utilities:**
   - `drive-api.ts`: テンプレートのコピー機能。
   - `slide-api.ts`: プレゼンテーションの更新機能 (batchUpdate)。
-- [ ] **Store:** `useGeneratorStore` の実装。Manifest 管理と同期ロジック。
-- [ ] **Components:** `PreviewWidget` (iframe) の実装。
-- [ ] **Test:**
+- [x] **Store:** `useGeneratorStore` の実装。Manifest 管理と同期ロジック。
+- [x] **Components:** `PreviewWidget` (iframe) の実装。
+- [x] **Test:**
   - 各 API Utility のモックを使用した単体テスト。
   - `useGeneratorStore` の状態遷移テスト。
 
-## Phase 4: Chat & AI Logic (Feature Implementation)
+## Phase 4: Chat & AI Logic (Feature Implementation) - **Current Task**
 
 Gemini API との連携およびチャット UI を実装します。
 
