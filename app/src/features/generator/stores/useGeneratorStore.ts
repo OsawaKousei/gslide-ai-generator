@@ -150,8 +150,12 @@ export const useGeneratorStore = create<Store>()(
 
           // 2. Fetch Current Slides Structure (to get objectIds)
 
+          if (!currentPresentationId) {
+            throw new Error('Presentation ID is required');
+          }
+
           const getResult = await getPresentation({
-            presentationId: currentPresentationId!,
+            presentationId: currentPresentationId,
             accessToken,
           });
 
@@ -189,10 +193,10 @@ export const useGeneratorStore = create<Store>()(
           const syncedSlides = manifest.slides.map((s, i) => {
             // If we had an existing slide, use its ID.
             // If we created a new one, we know the ID we generated.
-            const objectId =
-              i < currentSlides.length && currentSlides[i]
-                ? currentSlides[i]!.objectId
-                : `slide_${s.id.replace(/-/g, '_')}`;
+            const existingSlide = currentSlides[i];
+            const objectId = existingSlide
+              ? existingSlide.objectId
+              : `slide_${s.id.replace(/-/g, '_')}`;
 
             return {
               ...s,
