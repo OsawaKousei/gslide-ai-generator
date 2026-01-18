@@ -1,0 +1,14 @@
+FROM mcr.microsoft.com/playwright:v1.57.0-noble
+WORKDIR /app
+# package.json / package-lock.json を先にコピーして依存をインストール（キャッシュを効かせるため）
+COPY ./app/package*.json ./
+# package-lock.json があれば npm ci を使い、なければ npm install
+RUN if [ -f package-lock.json ]; then \
+      npm ci --prefer-offline --no-audit --no-fund; \
+    else \
+      npm install; \
+    fi
+# アプリ本体をコピー（開発時はボリュームで上書きされる想定）
+COPY ./app ./
+EXPOSE 5173
+CMD ["npm", "run", "dev"]

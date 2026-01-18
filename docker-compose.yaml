@@ -1,0 +1,13 @@
+volumes:
+  app-node-modules:
+
+services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile.dev
+    volumes:
+      - ./app:/app
+      - app-node-modules:/app/node_modules
+    ports:
+      - "5173:5173"

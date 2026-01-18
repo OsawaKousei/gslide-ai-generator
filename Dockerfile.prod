@@ -1,0 +1,27 @@
+# Stage 1: Builder
+FROM node:20-alpine AS builder
+WORKDIR /app
+
+# 依存関係のインストール
+# キャッシュ効率化のためpackage.jsonとlockファイルを先にコピー
+COPY app/package.json app/package-lock.json ./
+RUN npm ci
+
+# ソースコードのコピー
+COPY app/ ./
+
+# ビルド実行 (distディレクトリが生成される)
+RUN npm run build
+
+# Stage 2: Runner (Nginx)
+FROM nginx:alpine AS runner
+
+# Nginx設定のコピー
+COPY app/nginx.conf /etc/nginx/conf.d/default.conf
+
+# ビルド成果物をNginxのドキュメントルートにコピー
+COPY --from=builder /app/dist /usr/share/nginx/html
+
+EXPOSE 80
+
+CMD ["nginx", "-g", "daemon off;"]
