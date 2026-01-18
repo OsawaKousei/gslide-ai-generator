@@ -1,6 +1,6 @@
 /* eslint-disable no-console */
 import { describe, it, expect } from 'vitest';
-import { GeminiService } from './gemini-api';
+import { sendMessage } from './gemini-api';
 import type { PresentationManifest } from '../../generator/types';
 
 const TIMEOUT = 30000;
@@ -15,8 +15,6 @@ describeOrSkip('Gemini API Integration (Real API Check)', () => {
     async () => {
       if (!API_KEY) throw new Error('API Key not found');
 
-      const service = new GeminiService(API_KEY);
-
       const dummyManifest: PresentationManifest = {
         presentationId: null,
         title: 'Integration Test Presentation',
@@ -28,17 +26,21 @@ describeOrSkip('Gemini API Integration (Real API Check)', () => {
         "Create a presentation about 'Space Exploration' with 3 slides.";
 
       console.log('🚀 Sending request to Gemini...');
-      const result = await service.sendMessage([], message, dummyManifest);
+      const result = await sendMessage({
+        apiKey: API_KEY,
+        history: [],
+        message,
+        currentManifest: dummyManifest,
+      });
 
       if (result.isErr()) {
         console.error('Gemini Error:', result.error);
         throw result.error;
       }
 
-      const { text, textVal, functionCall } = result.value as any;
+      const { text, functionCall } = result.value;
       console.log('✅ Response received');
       console.log('Text:', text);
-      console.log('TextVal:', textVal);
       console.log('Function Call:', JSON.stringify(functionCall, null, 2));
 
       // We expect a mechanism to update manifest, likely a function call
@@ -48,7 +50,9 @@ describeOrSkip('Gemini API Integration (Real API Check)', () => {
       expect(result.isOk()).toBe(true);
 
       if (functionCall) {
+        // @ts-expect-error payload is unknown
         expect(functionCall.action).toBe('update_manifest');
+        // @ts-expect-error payload is unknown
         expect(functionCall.payload).toBeDefined();
         // @ts-expect-error payload is unknown
         expect(functionCall.payload.slides).toBeInstanceOf(Array);

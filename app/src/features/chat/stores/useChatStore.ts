@@ -2,7 +2,7 @@ import { create } from 'zustand';
 import { devtools } from 'zustand/middleware';
 import type { Content } from '@google/genai';
 import { type ChatMessage, type ChatState } from '../types';
-import { GeminiService } from '../utils/gemini-api';
+import { sendMessage } from '../utils/gemini-api';
 import { useGeneratorStore } from '../../generator/stores/useGeneratorStore';
 import type { SlideNode } from '../../generator/types';
 
@@ -62,8 +62,12 @@ export const useChatStore = create<Store>()(
             }));
 
           // 3. Call AI
-          const service = new GeminiService(apiKey);
-          const result = await service.sendMessage(history, content, manifest);
+          const result = await sendMessage({
+            apiKey,
+            history,
+            message: content,
+            currentManifest: manifest,
+          });
 
           if (result.isErr()) {
             throw result.error;

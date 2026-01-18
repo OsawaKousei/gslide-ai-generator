@@ -1,5 +1,5 @@
-import { GoogleGenAI, type Content, type Part, type Tool } from '@google/genai';
-import { ok, err, ResultAsync, type Result } from 'neverthrow';
+import { GoogleGenAI, type Content, type Tool } from '@google/genai';
+import { ResultAsync } from 'neverthrow';
 import type { PresentationManifest } from '../../generator/types';
 
 // TODO: Move to env.ts or similar if needed, but for now assuming implementation specific logic here or passed in.
@@ -71,22 +71,24 @@ const TOOLS: Tool[] = [
   },
 ];
 
-export class GeminiService {
-  private client: GoogleGenAI;
+type SendMessageParams = {
+  apiKey: string;
+  history: Content[];
+  message: string;
+  currentManifest: PresentationManifest;
+};
 
-  constructor(apiKey: string) {
-    this.client = new GoogleGenAI({ apiKey });
-  }
-
-  async sendMessage(
-    history: Content[],
-    message: string,
-    currentManifest: PresentationManifest,
-  ): Promise<Result<{ text: string; functionCall?: any }, Error>> {
-    const model = 'gemini-2.0-flash-exp'; // Updated model
-
-    // Inject current manifest context.
-    const contextRequest = `
+export const sendMessage = ({
+  apiKey,
+  history,
+  message,
+  currentManifest,
+}: SendMessageParams): ResultAsync<
+  { text: string; functionCall?: unknown },
+  Error
+> => {
+  // Inject current manifest context.
+  const contextRequest = `
       [Current Manifest Context]
       Title: ${currentManifest.title}
       Slides Count: ${currentManifest.slides.length}
@@ -95,44 +97,44 @@ export class GeminiService {
       User Request: ${message}
     `;
 
-    return ResultAsync.fromPromise(
-      (async () => {
-        const chat = this.client.chats.create({
-          model: 'gemini-2.0-flash-exp', // Updated model
-          config: {
-            systemInstruction: SYSTEM_INSTRUCTION,
-            tools: TOOLS,
-            temperature: 0.7,
-          },
-          history: history,
-        });
+  return ResultAsync.fromPromise(
+    (async () => {
+      const client = new GoogleGenAI({ apiKey });
+      const chat = client.chats.create({
+        model: 'gemini-2.0-flash-exp', // Updated model
+        config: {
+          systemInstruction: SYSTEM_INSTRUCTION,
+          tools: TOOLS,
+          temperature: 0.7,
+        },
+        history: history,
+      });
 
-        const result = await chat.sendMessage({
-          message: contextRequest,
-        });
+      const result = await chat.sendMessage({
+        message: contextRequest,
+      });
 
-        const textOutput = result.text || '';
+      const textOutput = result.text || '';
 
-        // Handle function calls
-        const functionCalls = result.functionCalls; // Getter
-        let functionCallData = undefined;
+      // Handle function calls
+      const functionCalls = result.functionCalls; // Getter
+      let functionCallData = undefined;
 
-        if (functionCalls && functionCalls.length > 0) {
-          const call = functionCalls[0];
-          if (call.name === 'update_manifest') {
-            functionCallData = {
-              action: 'update_manifest',
-              payload: call.args,
-            };
-          }
+      if (functionCalls && functionCalls.length > 0) {
+        const call = functionCalls[0];
+        if (call.name === 'update_manifest') {
+          functionCallData = {
+            action: 'update_manifest',
+            payload: call.args,
+          };
         }
+      }
 
-        return {
-          text: textOutput,
-          functionCall: functionCallData,
-        };
-      })(),
-      (e) => (e instanceof Error ? e : new Error(String(e))),
-    );
-  }
-}
+      return {
+        text: textOutput,
+        functionCall: functionCallData,
+      };
+    })(),
+    (e) => (e instanceof Error ? e : new Error(String(e))),
+  );
+};

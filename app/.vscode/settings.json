@@ -25,6 +25,8 @@
     "npm audit": true,
     "npm test": true,
     "node -v": true,
-    "npm -v": true
+    "npm -v": true,
+    "npm run lint": true,
+    "npm run format": true
   }
 }

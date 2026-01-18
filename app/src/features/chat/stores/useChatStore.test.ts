@@ -1,16 +1,16 @@
-import { describe, it, expect, beforeEach, vi, type Mock } from 'vitest';
+import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { useChatStore } from './useChatStore';
 import { useGeneratorStore } from '../../generator/stores/useGeneratorStore';
 import { ok, err } from 'neverthrow';
 
 // Mock dependencies
-const mockSendMessage = vi.fn();
+const { mockSendMessage } = vi.hoisted(() => ({
+  mockSendMessage: vi.fn(),
+}));
 
 vi.mock('../utils/gemini-api', () => {
   return {
-    GeminiService: class {
-      sendMessage = mockSendMessage;
-    },
+    sendMessage: mockSendMessage,
   };
 });
 
@@ -61,11 +61,12 @@ describe('useChatStore', () => {
     expect(messages[1].role).toBe('model');
     expect(messages[1].content).toBe('I parsed that.');
     expect(isLoading).toBe(false);
-    expect(mockSendMessage).toHaveBeenCalledWith(
-      expect.any(Array), // history
-      'Hello',
-      expect.anything(), // manifest
-    );
+    expect(mockSendMessage).toHaveBeenCalledWith({
+      apiKey: 'api-key',
+      history: expect.any(Array),
+      message: 'Hello',
+      currentManifest: expect.anything(),
+    });
   });
 
   it('should handle function call update_manifest', async () => {

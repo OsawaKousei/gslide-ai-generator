@@ -1,5 +1,3 @@
-import type { PresentationManifest } from '../../generator/types';
-
 export type FunctionCallAction =
   | 'create_slides'
   | 'update_slide' // This might be handled by update_manifest broadly or specific update

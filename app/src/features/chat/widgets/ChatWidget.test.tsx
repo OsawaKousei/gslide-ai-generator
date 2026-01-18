@@ -29,7 +29,7 @@ describe('ChatWidget', () => {
     vi.clearAllMocks();
     // Setup default store mock
     (useChatStore as unknown as ReturnType<typeof vi.fn>).mockImplementation(
-      (selector: any) => {
+      (selector: (state: unknown) => unknown) => {
         const state = {
           messages: [
             { id: '1', role: 'user', content: 'Hello' },
@@ -47,7 +47,7 @@ describe('ChatWidget', () => {
     );
 
     // Setup localStorage
-    (window.localStorage.getItem as any).mockReturnValue('fake-key');
+    vi.spyOn(window.localStorage, 'getItem').mockReturnValue('fake-key');
     window.alert = vi.fn();
   });
 
@@ -75,7 +75,7 @@ describe('ChatWidget', () => {
   });
 
   it('should alert if no api key', () => {
-    (window.localStorage.getItem as any).mockReturnValue(null);
+    vi.spyOn(window.localStorage, 'getItem').mockReturnValue(null);
     render(<ChatWidget />);
 
     const input = screen.getByPlaceholderText(/Describe/);
