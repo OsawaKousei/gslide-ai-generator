@@ -59,11 +59,11 @@ describe('useGeneratorStore', () => {
 
       await useGeneratorStore.getState().actions.syncToSlides();
 
-      expect(driveApi.copyPresentation).toHaveBeenCalledWith(
-        'temp-1',
-        'Test',
-        'test-token',
-      );
+      expect(driveApi.copyPresentation).toHaveBeenCalledWith({
+        templateId: 'temp-1',
+        title: 'Test',
+        accessToken: 'test-token',
+      });
       expect(useGeneratorStore.getState().manifest.presentationId).toBe(
         'new-pres-id',
       );

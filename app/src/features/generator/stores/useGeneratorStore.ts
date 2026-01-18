@@ -37,7 +37,7 @@ const initialState: GeneratorState = {
 };
 
 // Placeholder: 実際にはスライドの内容に基づいてリクエストを生成する複雑なロジックが必要
-const generateRequests = (slides: readonly SlideNode[]): SlideApiRequest[] => {
+const generateRequests = (_slides: readonly SlideNode[]): SlideApiRequest[] => {
   // TODO: Implement actual request builder
   // ここではダミーのリクエストリストを返す
   return [];
@@ -62,18 +62,20 @@ export const useGeneratorStore = create<Store>()(
           let currentPresentationId = manifest.presentationId;
 
           if (!currentPresentationId) {
+            // eslint-disable-next-line max-depth
             if (!templateId) {
               throw new Error(
                 'Template ID is required to create a presentation',
               );
             }
 
-            const copyResult = await copyPresentation(
+            const copyResult = await copyPresentation({
               templateId,
-              manifest.title,
+              title: manifest.title,
               accessToken,
-            );
+            });
 
+            // eslint-disable-next-line max-depth
             if (copyResult.isErr()) {
               throw copyResult.error;
             }
@@ -96,12 +98,14 @@ export const useGeneratorStore = create<Store>()(
           const requests = generateRequests(dirtySlides);
 
           if (requests.length > 0) {
-            const updateResult = await batchUpdatePresentation(
-              currentPresentationId!,
+            const updateResult = await batchUpdatePresentation({
+              // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+              presentationId: currentPresentationId!,
               requests,
               accessToken,
-            );
+            });
 
+            // eslint-disable-next-line max-depth
             if (updateResult.isErr()) {
               throw updateResult.error;
             }

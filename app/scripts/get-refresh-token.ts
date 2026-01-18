@@ -1,7 +1,8 @@
+/* eslint-disable no-console */
+/* eslint-disable max-depth */
 import { OAuth2Client } from 'google-auth-library';
 import http from 'http';
 import url from 'url';
-import { match } from 'ts-pattern';
 
 // .env.test から認証情報を読み込むために dotenv を使う手もあるが、
 // ここでは簡易的に実行時に環境変数を渡すか、ハードコードしてもらう想定。

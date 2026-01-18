@@ -36,7 +36,11 @@ describe('API Utils', () => {
         createFetchResponse(mockResponse),
       );
 
-      const result = await copyPresentation('temp-id', 'Title', 'token');
+      const result = await copyPresentation({
+        templateId: 'temp-id',
+        title: 'Title',
+        accessToken: 'token',
+      });
 
       expect(result.isOk()).toBe(true);
       if (result.isOk()) {
@@ -57,7 +61,11 @@ describe('API Utils', () => {
         createFetchResponse(mockResponse),
       );
 
-      const result = await copyPresentation('temp-id', 'Title', 'token');
+      const result = await copyPresentation({
+        templateId: 'temp-id',
+        title: 'Title',
+        accessToken: 'token',
+      });
 
       expect(result.isErr()).toBe(true);
     });
@@ -70,11 +78,11 @@ describe('API Utils', () => {
         createFetchResponse(mockResponse),
       );
 
-      const result = await batchUpdatePresentation(
-        'pres-id',
-        [{ foo: 'bar' }],
-        'token',
-      );
+      const result = await batchUpdatePresentation({
+        presentationId: 'pres-id',
+        requests: [{ foo: 'bar' }],
+        accessToken: 'token',
+      });
 
       expect(result.isOk()).toBe(true);
       expect(global.fetch).toHaveBeenCalledWith(

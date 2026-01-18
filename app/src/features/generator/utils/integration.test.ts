@@ -1,7 +1,8 @@
+/* eslint-disable no-console */
+/* eslint-disable max-depth */
 import { describe, it, expect, beforeAll } from 'vitest';
 import { copyPresentation } from './drive-api';
-import { batchUpdatePresentation, createPresentation } from './slide-api';
-import { env } from '../../../env';
+import { batchUpdatePresentation } from './slide-api';
 
 // 実際にAPIを叩くため、タイムアウトを長く設定
 const TIMEOUT = 30000;
@@ -48,7 +49,8 @@ describeOrSkip('Google API Integration (Real API Check)', () => {
           throw new Error(`Token Refresh Failed: ${res.status} - ${text}`);
         }
 
-        const data = await res.json();
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const data: any = await res.json();
         accessToken = data.access_token;
         console.log('✅ Access Token Refreshed');
       } catch (e) {
@@ -76,7 +78,12 @@ describeOrSkip('Google API Integration (Real API Check)', () => {
       }
 
       const title = `Automated Test Presentation ${new Date().toISOString()}`;
-      const result = await copyPresentation(TEMPLATE_ID, title, accessToken!);
+      const result = await copyPresentation({
+        templateId: TEMPLATE_ID,
+        title,
+        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+        accessToken: accessToken!,
+      });
 
       if (result.isErr()) {
         console.error('Copy Failed:', result.error);
@@ -109,11 +116,12 @@ describeOrSkip('Google API Integration (Real API Check)', () => {
         },
       ];
 
-      const result = await batchUpdatePresentation(
-        createdPresentationId,
+      const result = await batchUpdatePresentation({
+        presentationId: createdPresentationId,
         requests,
-        accessToken!,
-      );
+        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+        accessToken: accessToken!,
+      });
 
       if (result.isErr()) {
         console.error('Update Failed:', result.error);

@@ -8,11 +8,17 @@ const DriveFileSchema = z.object({
 
 type DriveFile = z.infer<typeof DriveFileSchema>;
 
-export const copyPresentation = (
-  templateId: string,
-  title: string,
-  accessToken: string,
-): ResultAsync<DriveFile, Error> => {
+type CopyPresentationParams = {
+  templateId: string;
+  title: string;
+  accessToken: string;
+};
+
+export const copyPresentation = ({
+  templateId,
+  title,
+  accessToken,
+}: CopyPresentationParams): ResultAsync<DriveFile, Error> => {
   return ResultAsync.fromPromise(
     fetch(
       `https://www.googleapis.com/drive/v3/files/${templateId}/copy?fields=id,name`,

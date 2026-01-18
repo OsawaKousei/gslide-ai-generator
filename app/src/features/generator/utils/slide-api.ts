@@ -1,12 +1,26 @@
 import { ResultAsync, ok, err } from 'neverthrow';
+import { z } from 'zod';
 
 export type SlideApiRequest = Record<string, unknown>;
 
+const CreatePresentationSchema = z.object({
+  presentationId: z.string(),
+  title: z.string(),
+});
+
+type CreatePresentationParams = {
+  title: string;
+  accessToken: string;
+};
+
 // 新規プレゼンテーション作成
-export const createPresentation = (
-  title: string,
-  accessToken: string,
-): ResultAsync<{ presentationId: string; name: string }, Error> => {
+export const createPresentation = ({
+  title,
+  accessToken,
+}: CreatePresentationParams): ResultAsync<
+  { presentationId: string; name: string },
+  Error
+> => {
   return ResultAsync.fromPromise(
     fetch('https://slides.googleapis.com/v1/presentations', {
       method: 'POST',
@@ -25,17 +39,29 @@ export const createPresentation = (
       return res.json();
     }),
     (e) => (e instanceof Error ? e : new Error('Unknown Slides API Error')),
-  ).map((json: any) => ({
-    presentationId: json.presentationId,
-    name: json.title,
-  }));
+  ).andThen((json) => {
+    const result = CreatePresentationSchema.safeParse(json);
+    if (!result.success) {
+      return err(new Error(`Invalid API Response: ${result.error.message}`));
+    }
+    return ok({
+      presentationId: result.data.presentationId,
+      name: result.data.title,
+    });
+  });
 };
 
-export const batchUpdatePresentation = (
-  presentationId: string,
-  requests: readonly SlideApiRequest[],
-  accessToken: string,
-): ResultAsync<unknown, Error> => {
+type BatchUpdateParams = {
+  presentationId: string;
+  requests: readonly SlideApiRequest[];
+  accessToken: string;
+};
+
+export const batchUpdatePresentation = ({
+  presentationId,
+  requests,
+  accessToken,
+}: BatchUpdateParams): ResultAsync<unknown, Error> => {
   if (requests.length === 0) {
     return ok(undefined);
   }

@@ -1,3 +1,6 @@
+/* eslint-disable no-console */
+/* eslint-disable @typescript-eslint/no-explicit-any */
+/* eslint-disable max-depth */
 // Node.js built-in fetch is available in newer versions (18+)
 // No import needed for fetch
 
