@@ -1,5 +1,5 @@
 {
-  "name": "vite-csr-app-template",
+  "name": "gslide-ai-generator",
   "private": true,
   "version": "0.0.0",
   "type": "module",
@@ -53,5 +53,6 @@
     "vite": "^7.2.4",
     "vite-plugin-svgr": "^4.5.0",
     "vitest": "^4.0.15"
-  }
+  },
+  "author": "OsawaKousei"
 }
