@@ -131,7 +131,7 @@ export const sendMessage = ({
 
       if (functionCalls && functionCalls.length > 0) {
         const call = functionCalls[0];
-        if (call.name === 'update_manifest') {
+        if (call?.name === 'update_manifest') {
           functionCallData = {
             action: 'update_manifest',
             payload: call.args,
@@ -141,7 +141,7 @@ export const sendMessage = ({
 
       return {
         text: textOutput,
-        functionCall: functionCallData,
+        ...(functionCallData ? { functionCall: functionCallData } : {}),
       };
     })(),
     (e) => (e instanceof Error ? e : new Error(String(e))),

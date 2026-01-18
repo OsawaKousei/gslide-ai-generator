@@ -80,7 +80,7 @@ export const useChatStore = create<Store>()(
             id: crypto.randomUUID(),
             role: 'model',
             content: text,
-            functionCall,
+            ...(functionCall ? { functionCall } : {}),
             timestamp: Date.now(),
           };
 
@@ -109,7 +109,7 @@ export const useChatStore = create<Store>()(
                   ...incoming,
                   status: 'dirty', // Mark as dirty for sync
                   content: {
-                    ...newSlides[index].content,
+                    ...(newSlides[index]!.content || {}),
                     ...(incoming.content || {}),
                   },
                 } as SlideNode;

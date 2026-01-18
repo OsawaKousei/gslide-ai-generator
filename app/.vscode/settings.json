@@ -27,6 +27,7 @@
     "node -v": true,
     "npm -v": true,
     "npm run lint": true,
-    "npm run format": true
+    "npm run format": true,
+    "npx tsc -b --noEmit": true
   }
 }

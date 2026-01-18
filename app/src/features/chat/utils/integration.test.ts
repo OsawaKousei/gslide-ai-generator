@@ -50,14 +50,12 @@ describeOrSkip('Gemini API Integration (Real API Check)', () => {
       expect(result.isOk()).toBe(true);
 
       if (functionCall) {
-        // @ts-expect-error payload is unknown
         expect(functionCall.action).toBe('update_manifest');
-        // @ts-expect-error payload is unknown
         expect(functionCall.payload).toBeDefined();
-        // @ts-expect-error payload is unknown
-        expect(functionCall.payload.slides).toBeInstanceOf(Array);
-        // @ts-expect-error payload is unknown
-        expect(functionCall.payload.slides.length).toBeGreaterThan(0);
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        expect((functionCall.payload as any).slides).toBeInstanceOf(Array);
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        expect((functionCall.payload as any).slides.length).toBeGreaterThan(0);
       } else {
         // Fallback if model decides just to talk, though prompt engineering tries to force it.
         expect(text.length).toBeGreaterThan(0);

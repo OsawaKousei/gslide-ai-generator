@@ -1,4 +1,4 @@
-import { ResultAsync, ok, err } from 'neverthrow';
+import { ResultAsync, ok, okAsync, err } from 'neverthrow';
 import { z } from 'zod';
 
 export type SlideApiRequest = Record<string, unknown>;
@@ -63,7 +63,7 @@ export const batchUpdatePresentation = ({
   accessToken,
 }: BatchUpdateParams): ResultAsync<unknown, Error> => {
   if (requests.length === 0) {
-    return ok(undefined);
+    return okAsync(undefined);
   }
 
   return ResultAsync.fromPromise(

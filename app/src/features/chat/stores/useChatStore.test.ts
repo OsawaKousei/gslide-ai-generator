@@ -58,8 +58,9 @@ describe('useChatStore', () => {
       content: 'Hello',
       timestamp: Date.now(),
     });
-    expect(messages[1].role).toBe('model');
-    expect(messages[1].content).toBe('I parsed that.');
+    expect(messages[1]).toBeDefined();
+    expect(messages[1]!.role).toBe('model');
+    expect(messages[1]!.content).toBe('I parsed that.');
     expect(isLoading).toBe(false);
     expect(mockSendMessage).toHaveBeenCalledWith({
       apiKey: 'api-key',
@@ -94,14 +95,16 @@ describe('useChatStore', () => {
 
     const { messages } = useChatStore.getState();
     expect(messages).toHaveLength(2);
-    expect(messages[1].functionCall).toBeDefined();
+    expect(messages[1]).toBeDefined();
+    expect(messages[1]!.functionCall).toBeDefined();
 
     // Check generator store update
     const manifest = useGeneratorStore.getState().manifest;
     expect(manifest.title).toBe('New Title');
     expect(manifest.slides).toHaveLength(1);
-    expect(manifest.slides[0].content.title).toBe('First Slide');
-    expect(manifest.slides[0].status).toBe('pending');
+    expect(manifest.slides[0]).toBeDefined();
+    expect(manifest.slides[0]!.content.title).toBe('First Slide');
+    expect(manifest.slides[0]!.status).toBe('pending');
   });
 
   it('should handle error from AI service', async () => {
