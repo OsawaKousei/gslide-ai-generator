@@ -47,31 +47,34 @@ const generateRequests = (
   const templateSourceId = realSlides[0]?.objectId; // Use first slide as template for new ones
 
   manifestSlides.forEach((slide, index) => {
-    let targetObjectId: string;
-
     // 1. Determine Target ID (Existing or New)
-    if (index < simulatedRealSlides.length && simulatedRealSlides[index]) {
-      // Existing slide
-      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-      targetObjectId = simulatedRealSlides[index]!.objectId;
-    } else {
+    const targetObjectId = (() => {
+      if (index < simulatedRealSlides.length && simulatedRealSlides[index]) {
+        // Existing slide
+        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+        return simulatedRealSlides[index]!.objectId;
+      }
+
       // New slide needed
-      if (!templateSourceId) return; // Cannot create without template
+      if (!templateSourceId) return null; // Cannot create without template
 
       // New ID must be unique and valid. UUID is fine, but lets remove dashes to be safe for Google API IDs if strict
-      targetObjectId = `slide_${slide.id.replace(/-/g, '_')}`;
+      const newId = `slide_${slide.id.replace(/-/g, '_')}`;
 
       requests.push({
         duplicateObject: {
-          objectId: targetObjectId,
+          objectId: newId,
           sourceObjectId: templateSourceId,
         },
       });
 
       // Move the new slide to the end (optional, duplicateObject places at end by default if insertionIndex not specified)
       // Add to simulated tracking
-      simulatedRealSlides.push({ objectId: targetObjectId });
-    }
+      simulatedRealSlides.push({ objectId: newId });
+      return newId;
+    })();
+
+    if (!targetObjectId) return;
 
     // 2. Content Updates (Only if dirty or pending (new))
     if (slide.status === 'dirty' || slide.status === 'pending') {
@@ -127,11 +130,14 @@ export const useGeneratorStore = create<Store>()(
           let currentPresentationId = manifest.presentationId;
 
           if (!currentPresentationId) {
-            // eslint-disable-next-line max-depth
             if (!templateId) {
-              throw new Error(
-                'Template ID is required to create a presentation',
-              );
+              set({
+                isSyncing: false,
+                error: new Error(
+                  'Template ID is required to create a presentation',
+                ),
+              });
+              return;
             }
 
             const copyResult = await copyPresentation({
@@ -140,18 +146,21 @@ export const useGeneratorStore = create<Store>()(
               accessToken,
             });
 
-            // eslint-disable-next-line max-depth
             if (copyResult.isErr()) {
-              throw copyResult.error;
+              set({ isSyncing: false, error: copyResult.error });
+              return;
             }
 
             currentPresentationId = copyResult.value.id;
           }
 
           // 2. Fetch Current Slides Structure (to get objectIds)
-
           if (!currentPresentationId) {
-            throw new Error('Presentation ID is required');
+            set({
+              isSyncing: false,
+              error: new Error('Presentation ID is required'),
+            });
+            return;
           }
 
           const getResult = await getPresentation({
@@ -160,7 +169,8 @@ export const useGeneratorStore = create<Store>()(
           });
 
           if (getResult.isErr()) {
-            throw getResult.error;
+            set({ isSyncing: false, error: getResult.error });
+            return;
           }
 
           const currentSlides = getResult.value.slides;
@@ -176,20 +186,13 @@ export const useGeneratorStore = create<Store>()(
               accessToken,
             });
 
-            // eslint-disable-next-line max-depth
             if (updateResult.isErr()) {
-              throw updateResult.error;
+              set({ isSyncing: false, error: updateResult.error });
+              return;
             }
           }
 
           // 4. Update Sync Status & IDs
-          // Hydrate manifest with actual objectIds (rough mapping for now)
-          // Note: If we added slides, we used predicted IDs.
-          // Correct way is to fetch again, but for now assuming strict order.
-
-          // Re-fetch to be sure about Object IDs if we want perfect sync state?
-          // For PoC, simply marking as synced is enough.
-
           const syncedSlides = manifest.slides.map((s, i) => {
             // If we had an existing slide, use its ID.
             // If we created a new one, we know the ID we generated.

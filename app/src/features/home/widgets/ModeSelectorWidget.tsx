@@ -1,16 +1,9 @@
 import { useNavigate } from 'react-router-dom';
 import { FilePlus, LayoutTemplate, PenTool } from 'lucide-react';
 import { ModeCard } from '../components/ModeCard';
-// import { useGeneratorStore } from '@/features/generator/stores/useGeneratorStore';
-// import { useEffect } from 'react';
 
 export const ModeSelectorWidget = () => {
   const navigate = useNavigate();
-  // const reset = useGeneratorStore((s) => s.actions.reset); // TODO: Add reset action to store
-
-  // useEffect(() => {
-  //   reset();
-  // }, []);
 
   return (
     <div className="flex flex-col items-center justify-center min-h-[calc(100vh-4rem)] p-8 bg-gray-50">
