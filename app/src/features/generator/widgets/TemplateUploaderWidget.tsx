@@ -2,12 +2,14 @@ import { Upload, Loader2, FileType } from 'lucide-react';
 import { useState, useRef } from 'react';
 import { Button } from '@/components/ui/button';
 import { useAuthStore } from '@/features/auth/stores/useAuthStore';
+import { useNotificationActions } from '@/features/global-notification';
 import { useGeneratorStore } from '../stores/useGeneratorStore';
 import { uploadPresentation } from '../utils/drive-api';
 
 export const TemplateUploaderWidget = () => {
   const authStatus = useAuthStore((s) => s.status);
   const accessToken = useAuthStore((s) => s.accessToken);
+  const { showToast } = useNotificationActions();
 
   const templateId = useGeneratorStore((s) => s.templateId);
   const { setTemplateId } = useGeneratorStore((s) => s.actions);
@@ -28,7 +30,12 @@ export const TemplateUploaderWidget = () => {
       file.type !==
         'application/vnd.openxmlformats-officedocument.presentationml.presentation'
     ) {
-      alert('Please upload a PowerPoint (.pptx) file.');
+      showToast({
+        type: 'error',
+        title: 'Invalid File',
+        message: 'Please upload a PowerPoint (.pptx) file.',
+        position: 'top-right',
+      });
       return;
     }
 
@@ -42,10 +49,20 @@ export const TemplateUploaderWidget = () => {
 
       if (result.isOk()) {
         setTemplateId(result.value.id);
-        alert(`Template uploaded: ${result.value.name}`);
+        showToast({
+          type: 'success',
+          title: 'Upload Complete',
+          message: `Template uploaded: ${result.value.name}`,
+          position: 'top-right',
+        });
       } else {
         console.error(result.error);
-        alert('Upload failed: ' + result.error.message);
+        showToast({
+          type: 'error',
+          title: 'Upload Failed',
+          message: result.error.message,
+          position: 'top-right',
+        });
       }
     } finally {
       setIsUploading(false);
