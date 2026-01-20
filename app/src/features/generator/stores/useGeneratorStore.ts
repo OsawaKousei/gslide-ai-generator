@@ -111,6 +111,61 @@ const generateRequests = (
   return requests;
 };
 
+type GetOrCreateParams = {
+  readonly presentationId: string | null | undefined;
+  readonly templateId: string | null;
+  readonly title: string;
+  readonly accessToken: string;
+};
+
+const getOrCreatePresentationId = async ({
+  presentationId,
+  templateId,
+  title,
+  accessToken,
+}: GetOrCreateParams): Promise<{ id?: string; error?: Error }> => {
+  if (presentationId) return { id: presentationId };
+  if (!templateId) {
+    return {
+      error: new Error('Template ID is required to create a presentation'),
+    };
+  }
+
+  const copyResult = await copyPresentation({
+    templateId,
+    title,
+    accessToken,
+  });
+
+  if (copyResult.isErr()) {
+    return { error: copyResult.error };
+  }
+
+  return { id: copyResult.value.id };
+};
+
+type ExecuteBatchParams = {
+  readonly presentationId: string;
+  readonly requests: SlideApiRequest[];
+  readonly accessToken: string;
+};
+
+const executeBatchUpdate = async ({
+  presentationId,
+  requests,
+  accessToken,
+}: ExecuteBatchParams): Promise<Error | null> => {
+  if (requests.length === 0) return null;
+
+  const updateResult = await batchUpdatePresentation({
+    presentationId,
+    requests,
+    accessToken,
+  });
+
+  return updateResult.isErr() ? updateResult.error : null;
+};
+
 export const useGeneratorStore = create<Store>()(
   devtools((set, get) => ({
     ...initialState,
@@ -127,42 +182,23 @@ export const useGeneratorStore = create<Store>()(
 
         try {
           // 1. Create Presentation if not exists
-          let currentPresentationId = manifest.presentationId;
-
-          if (!currentPresentationId) {
-            if (!templateId) {
-              set({
-                isSyncing: false,
-                error: new Error(
-                  'Template ID is required to create a presentation',
-                ),
-              });
-              return;
-            }
-
-            const copyResult = await copyPresentation({
+          const { id: currentPresentationId, error: createError } =
+            await getOrCreatePresentationId({
+              presentationId: manifest.presentationId,
               templateId,
               title: manifest.title,
               accessToken,
             });
 
-            if (copyResult.isErr()) {
-              set({ isSyncing: false, error: copyResult.error });
-              return;
-            }
-
-            currentPresentationId = copyResult.value.id;
-          }
-
-          // 2. Fetch Current Slides Structure (to get objectIds)
-          if (!currentPresentationId) {
+          if (createError || !currentPresentationId) {
             set({
               isSyncing: false,
-              error: new Error('Presentation ID is required'),
+              error: createError || new Error('Failed to get presentation ID'),
             });
             return;
           }
 
+          // 2. Fetch Current Slides Structure (to get objectIds)
           const getResult = await getPresentation({
             presentationId: currentPresentationId,
             accessToken,
@@ -178,21 +214,19 @@ export const useGeneratorStore = create<Store>()(
           // 3. Generate Requests
           const requests = generateRequests(manifest.slides, currentSlides);
 
-          if (requests.length > 0) {
-            const updateResult = await batchUpdatePresentation({
-              // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-              presentationId: currentPresentationId!,
-              requests,
-              accessToken,
-            });
+          // 4. Batch Update
+          const updateError = await executeBatchUpdate({
+            presentationId: currentPresentationId,
+            requests,
+            accessToken,
+          });
 
-            if (updateResult.isErr()) {
-              set({ isSyncing: false, error: updateResult.error });
-              return;
-            }
+          if (updateError) {
+            set({ isSyncing: false, error: updateError });
+            return;
           }
 
-          // 4. Update Sync Status & IDs
+          // 5. Update Sync Status & IDs
           const syncedSlides = manifest.slides.map((s, i) => {
             // If we had an existing slide, use its ID.
             // If we created a new one, we know the ID we generated.
