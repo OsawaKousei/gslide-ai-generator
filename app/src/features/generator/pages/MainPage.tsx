@@ -1,10 +1,10 @@
 import { PreviewWidget } from '../widgets/PreviewWidget';
-import { ConfigWidget } from '../widgets/ConfigWidget';
+import { TemplateUploaderWidget } from '../widgets/TemplateUploaderWidget';
 import { ChatWidget } from '@/features/chat';
 
 export const MainPage = () => {
   return (
-    <div className="flex h-screen w-screen bg-gray-50">
+    <div className="flex h-full w-full bg-gray-50 flex-1 overflow-hidden">
       {/* [Left Pane] Preview Area (50% width) */}
       <section className="w-1/2 h-full border-r border-gray-200 bg-white">
         <PreviewWidget />
@@ -12,10 +12,10 @@ export const MainPage = () => {
 
       {/* [Right Pane] Control & Interaction (50% width) */}
       <section className="flex flex-col w-1/2 h-full">
-        {/* [Right Top] Config Area (Fixed Height) */}
-        <header className="h-auto p-4 border-b border-gray-200 bg-white/50 backdrop-blur">
-          <ConfigWidget />
-        </header>
+        {/* [Right Top] Template Configuration */}
+        <div className="flex-none bg-white z-10">
+          <TemplateUploaderWidget />
+        </div>
 
         {/* [Right Center/Bottom] Chat Area (Flex Grow) */}
         <main className="flex-1 overflow-hidden relative">
