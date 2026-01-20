@@ -2,7 +2,7 @@
 import type { z } from 'zod';
 import type { envSchema } from './env';
 
-type Env = z.infer<envSchema>;
+type Env = z.infer<typeof envSchema>;
 
 /* eslint-disable no-restricted-syntax, @typescript-eslint/consistent-type-definitions, @typescript-eslint/no-empty-object-type */
 declare global {

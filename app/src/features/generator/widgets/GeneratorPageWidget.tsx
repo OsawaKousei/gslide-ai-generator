@@ -2,7 +2,7 @@ import { PreviewWidget } from '../widgets/PreviewWidget';
 import { TemplateUploaderWidget } from '../widgets/TemplateUploaderWidget';
 import { ChatWidget } from '@/features/chat';
 
-export const MainPage = () => {
+export const GeneratorPageWidget = () => {
   return (
     <div className="flex h-full w-full bg-gray-50 flex-1 overflow-hidden">
       {/* [Left Pane] Preview Area (50% width) */}
