@@ -47,31 +47,34 @@ const generateRequests = (
   const templateSourceId = realSlides[0]?.objectId; // Use first slide as template for new ones
 
   manifestSlides.forEach((slide, index) => {
-    let targetObjectId: string;
-
     // 1. Determine Target ID (Existing or New)
-    if (index < simulatedRealSlides.length && simulatedRealSlides[index]) {
-      // Existing slide
-      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-      targetObjectId = simulatedRealSlides[index]!.objectId;
-    } else {
+    const targetObjectId = (() => {
+      if (index < simulatedRealSlides.length && simulatedRealSlides[index]) {
+        // Existing slide
+        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+        return simulatedRealSlides[index]!.objectId;
+      }
+
       // New slide needed
-      if (!templateSourceId) return; // Cannot create without template
+      if (!templateSourceId) return null; // Cannot create without template
 
       // New ID must be unique and valid. UUID is fine, but lets remove dashes to be safe for Google API IDs if strict
-      targetObjectId = `slide_${slide.id.replace(/-/g, '_')}`;
+      const newId = `slide_${slide.id.replace(/-/g, '_')}`;
 
       requests.push({
         duplicateObject: {
-          objectId: targetObjectId,
+          objectId: newId,
           sourceObjectId: templateSourceId,
         },
       });
 
       // Move the new slide to the end (optional, duplicateObject places at end by default if insertionIndex not specified)
       // Add to simulated tracking
-      simulatedRealSlides.push({ objectId: targetObjectId });
-    }
+      simulatedRealSlides.push({ objectId: newId });
+      return newId;
+    })();
+
+    if (!targetObjectId) return;
 
     // 2. Content Updates (Only if dirty or pending (new))
     if (slide.status === 'dirty' || slide.status === 'pending') {
@@ -108,6 +111,61 @@ const generateRequests = (
   return requests;
 };
 
+type GetOrCreateParams = {
+  readonly presentationId: string | null | undefined;
+  readonly templateId: string | null;
+  readonly title: string;
+  readonly accessToken: string;
+};
+
+const getOrCreatePresentationId = async ({
+  presentationId,
+  templateId,
+  title,
+  accessToken,
+}: GetOrCreateParams): Promise<{ id?: string; error?: Error }> => {
+  if (presentationId) return { id: presentationId };
+  if (!templateId) {
+    return {
+      error: new Error('Template ID is required to create a presentation'),
+    };
+  }
+
+  const copyResult = await copyPresentation({
+    templateId,
+    title,
+    accessToken,
+  });
+
+  if (copyResult.isErr()) {
+    return { error: copyResult.error };
+  }
+
+  return { id: copyResult.value.id };
+};
+
+type ExecuteBatchParams = {
+  readonly presentationId: string;
+  readonly requests: SlideApiRequest[];
+  readonly accessToken: string;
+};
+
+const executeBatchUpdate = async ({
+  presentationId,
+  requests,
+  accessToken,
+}: ExecuteBatchParams): Promise<Error | null> => {
+  if (requests.length === 0) return null;
+
+  const updateResult = await batchUpdatePresentation({
+    presentationId,
+    requests,
+    accessToken,
+  });
+
+  return updateResult.isErr() ? updateResult.error : null;
+};
+
 export const useGeneratorStore = create<Store>()(
   devtools((set, get) => ({
     ...initialState,
@@ -124,43 +182,31 @@ export const useGeneratorStore = create<Store>()(
 
         try {
           // 1. Create Presentation if not exists
-          let currentPresentationId = manifest.presentationId;
-
-          if (!currentPresentationId) {
-            // eslint-disable-next-line max-depth
-            if (!templateId) {
-              throw new Error(
-                'Template ID is required to create a presentation',
-              );
-            }
-
-            const copyResult = await copyPresentation({
+          const { id: currentPresentationId, error: createError } =
+            await getOrCreatePresentationId({
+              presentationId: manifest.presentationId,
               templateId,
               title: manifest.title,
               accessToken,
             });
 
-            // eslint-disable-next-line max-depth
-            if (copyResult.isErr()) {
-              throw copyResult.error;
-            }
-
-            currentPresentationId = copyResult.value.id;
+          if (createError || !currentPresentationId) {
+            set({
+              isSyncing: false,
+              error: createError || new Error('Failed to get presentation ID'),
+            });
+            return;
           }
 
           // 2. Fetch Current Slides Structure (to get objectIds)
-
-          if (!currentPresentationId) {
-            throw new Error('Presentation ID is required');
-          }
-
           const getResult = await getPresentation({
             presentationId: currentPresentationId,
             accessToken,
           });
 
           if (getResult.isErr()) {
-            throw getResult.error;
+            set({ isSyncing: false, error: getResult.error });
+            return;
           }
 
           const currentSlides = getResult.value.slides;
@@ -168,28 +214,19 @@ export const useGeneratorStore = create<Store>()(
           // 3. Generate Requests
           const requests = generateRequests(manifest.slides, currentSlides);
 
-          if (requests.length > 0) {
-            const updateResult = await batchUpdatePresentation({
-              // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-              presentationId: currentPresentationId!,
-              requests,
-              accessToken,
-            });
+          // 4. Batch Update
+          const updateError = await executeBatchUpdate({
+            presentationId: currentPresentationId,
+            requests,
+            accessToken,
+          });
 
-            // eslint-disable-next-line max-depth
-            if (updateResult.isErr()) {
-              throw updateResult.error;
-            }
+          if (updateError) {
+            set({ isSyncing: false, error: updateError });
+            return;
           }
 
-          // 4. Update Sync Status & IDs
-          // Hydrate manifest with actual objectIds (rough mapping for now)
-          // Note: If we added slides, we used predicted IDs.
-          // Correct way is to fetch again, but for now assuming strict order.
-
-          // Re-fetch to be sure about Object IDs if we want perfect sync state?
-          // For PoC, simply marking as synced is enough.
-
+          // 5. Update Sync Status & IDs
           const syncedSlides = manifest.slides.map((s, i) => {
             // If we had an existing slide, use its ID.
             // If we created a new one, we know the ID we generated.

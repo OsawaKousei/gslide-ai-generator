@@ -1,11 +1,16 @@
 import { Routes, Route, Navigate } from 'react-router-dom';
-import { MainPage } from '@/features/generator/pages/MainPage';
+import { GeneratorPageWidget } from '@/features/generator';
+import { ModeSelectorWidget } from '@/features/home';
+import { MainLayout } from '@/components/layouts/MainLayout';
 
 export const AppRoutes = () => {
   return (
     <Routes>
-      <Route path="/" element={<MainPage />} />
-      <Route path="*" element={<Navigate to="/" replace />} />
+      <Route element={<MainLayout />}>
+        <Route path="/" element={<ModeSelectorWidget />} />
+        <Route path="/create/template" element={<GeneratorPageWidget />} />
+        <Route path="*" element={<Navigate to="/" replace />} />
+      </Route>
     </Routes>
   );
 };

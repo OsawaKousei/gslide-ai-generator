@@ -1,17 +1,8 @@
 import { match } from 'ts-pattern';
-import {
-  LogIn,
-  LogOut,
-  User as UserIcon,
-  Settings,
-  Upload,
-  Loader2,
-} from 'lucide-react';
-import { useState, useEffect, useRef } from 'react';
+import { LogIn, LogOut, User as UserIcon, Settings } from 'lucide-react';
+import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
-import { useAuthStore } from '@/features/auth/stores/useAuthStore';
-import { useGeneratorStore } from '../stores/useGeneratorStore';
-import { uploadPresentation } from '../utils/drive-api';
+import { useAuthStore } from '../stores/useAuthStore';
 import {
   Dialog,
   DialogContent,
@@ -19,22 +10,17 @@ import {
   DialogTitle,
   DialogTrigger,
 } from '@/components/ui/dialog';
+import { Link } from 'react-router-dom';
 
 const API_KEY_STORAGE_KEY = 'gemini-api-key';
 
-export const ConfigWidget = () => {
+export const AuthHeaderWidget = () => {
   const authStatus = useAuthStore((s) => s.status);
   const user = useAuthStore((s) => s.user);
-  const accessToken = useAuthStore((s) => s.accessToken);
   const { login, logout } = useAuthStore((s) => s.actions);
-
-  const templateId = useGeneratorStore((s) => s.templateId);
-  const { setTemplateId } = useGeneratorStore((s) => s.actions);
 
   const [apiKey, setApiKey] = useState('');
   const [isOpen, setIsOpen] = useState(false);
-  const [isUploading, setIsUploading] = useState(false);
-  const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     setApiKey(localStorage.getItem(API_KEY_STORAGE_KEY) || '');
@@ -45,83 +31,16 @@ export const ConfigWidget = () => {
     setIsOpen(false);
   };
 
-  const handleUploadClick = () => {
-    fileInputRef.current?.click();
-  };
-
-  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file || !accessToken) return;
-
-    if (
-      !file.name.endsWith('.pptx') &&
-      file.type !==
-        'application/vnd.openxmlformats-officedocument.presentationml.presentation'
-    ) {
-      alert('Please upload a PowerPoint (.pptx) file.');
-      return;
-    }
-
-    setIsUploading(true);
-
-    try {
-      const result = await uploadPresentation({
-        file,
-        accessToken,
-      });
-
-      if (result.isOk()) {
-        setTemplateId(result.value.id);
-        alert(`Template uploaded: ${result.value.name}`);
-      } else {
-        console.error(result.error);
-        alert('Upload failed: ' + result.error.message);
-      }
-    } finally {
-      setIsUploading(false);
-      // Reset input
-      if (fileInputRef.current) fileInputRef.current.value = '';
-    }
-  };
-
   return (
-    <div className="flex items-center justify-between w-full">
-      <div className="font-bold text-lg">GSlide AI Generator</div>
+    <div className="flex items-center justify-between w-full h-16 px-6 border-b border-gray-200 bg-white">
+      <Link
+        to="/"
+        className="font-bold text-lg hover:opacity-80 transition-opacity"
+      >
+        GSlide AI Generator
+      </Link>
 
       <div className="flex items-center gap-4">
-        {/* Hidden File Input */}
-        <input
-          type="file"
-          ref={fileInputRef}
-          className="hidden"
-          accept=".pptx,application/vnd.openxmlformats-officedocument.presentationml.presentation"
-          onChange={handleFileChange}
-        />
-
-        {/* Template Uploader (Only show when authenticated) */}
-        {authStatus === 'authenticated' && (
-          <div className="flex items-center gap-2">
-            <span className="text-xs text-gray-500 max-w-[150px] truncate">
-              {templateId ? `Template: ${templateId}` : 'No Template'}
-            </span>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={handleUploadClick}
-              title="Upload .pptx Template"
-              className="gap-2"
-              disabled={isUploading}
-            >
-              {isUploading ? (
-                <Loader2 size={16} className="animate-spin" />
-              ) : (
-                <Upload size={16} />
-              )}
-              {isUploading ? 'Uploading...' : 'Upload Template'}
-            </Button>
-          </div>
-        )}
-
         <Dialog open={isOpen} onOpenChange={setIsOpen}>
           <DialogTrigger asChild>
             <Button variant="ghost" size="icon" title="Settings">
@@ -170,8 +89,9 @@ export const ConfigWidget = () => {
                   </div>
                 )}
                 <div className="flex flex-col">
-                  <span className="font-medium leading-none">{user?.name}</span>
-                  <span className="text-xs text-gray-500">{user?.email}</span>
+                  <span className="font-medium leading-none hidden sm:inline">
+                    {user?.name}
+                  </span>
                 </div>
               </div>
               <Button
@@ -181,7 +101,7 @@ export const ConfigWidget = () => {
                 className="gap-2"
               >
                 <LogOut size={16} />
-                Logout
+                <span className="hidden sm:inline">Logout</span>
               </Button>
             </div>
           ))
